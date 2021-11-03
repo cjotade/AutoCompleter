@@ -5,6 +5,10 @@ from fast_autocomplete import AutoComplete
 from utils import get_words
 from ModelManager import ModelManager
 
+import websockets
+import asyncio
+
+
 def load_data(data_folder="../data/"):
     filename_train = "ES-es_colloquial_cleaned.txt"
     with open(os.path.join(data_folder, filename_train), 'r') as fp:
@@ -28,6 +32,27 @@ def create_model(data, spanish_cnt_words=None):
     # Metrics calculator
     return ModelManager(st_autocompleter, cnt_words, spanish_count_words=spanish_cnt_words)  
 
+def get_best_response(incomplete_word, model, params={}):
+    # Calculate predictions
+    predictions = model.predict(
+        incomplete_word=incomplete_word,
+        **params
+    )
+    if predictions:
+        best_response, responses, dist_responses = predictions
+        return best_response
+    else:
+        return None
+
+async def handle(websocket, path):
+    print("A client just connected")
+    try:
+        async for incomplete_word in websocket:
+            print("Incomplete word from client: " + incomplete_word)
+            best_response = get_best_response(incomplete_word=incomplete_word, model=model, params=params)
+            await websocket.send(f"Best response: {best_response}")
+    except websockets.exceptions.ConnectionClosed as e:
+        print("A client just disconnected")
 
 if __name__ == "__main__":
     # Load data
@@ -44,16 +69,8 @@ if __name__ == "__main__":
         "no_response_use_sm_priors": False,
     }
 
-    incomplete_word = "garban"
-
-    # Calculate predictions
-    predictions = model.predict(
-        incomplete_word=incomplete_word,
-        **params
-    )
-
-    if predictions:
-        best_response, responses, dist_responses = predictions
-        print("best_response:", best_response)
-    else:
-        print("No predictions found")
+    PORT = 7890
+    print("Server listening on Port " + str(PORT))
+    start_server = websockets.serve(handle, "127.0.0.1", PORT)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
