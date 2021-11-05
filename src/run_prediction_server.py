@@ -50,7 +50,8 @@ async def handle(websocket, path):
         async for incomplete_word in websocket:
             print("Incomplete word from client: " + incomplete_word)
             best_response = get_best_response(incomplete_word=incomplete_word, model=model, params=params)
-            await websocket.send(f"Best response: {best_response}")
+            if best_response:
+                await websocket.send(best_response)
     except websockets.exceptions.ConnectionClosed as e:
         print("A client just disconnected")
 
