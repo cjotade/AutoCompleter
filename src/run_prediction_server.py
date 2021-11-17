@@ -70,8 +70,8 @@ if __name__ == "__main__":
         "no_response_use_sm_priors": False,
     }
 
-    PORT = 7890
+    PORT = 3000
     print("Server listening on Port " + str(PORT))
-    start_server = websockets.serve(handle, "127.0.0.1", PORT)
+    start_server = websockets.serve(handle, "0.0.0.0", PORT)
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
