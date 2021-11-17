@@ -2,6 +2,42 @@ import os
 import json
 from nltk import everygrams
 
+def load_data(data_folder="../data/"):
+    filename_train = "ES-es_colloquial_cleaned.txt"
+    with open(os.path.join(data_folder, filename_train), 'r') as fp:
+        data_train = fp.read().splitlines()
+    filename_test = "ES-es_colloquial_01_cleaned.txt"
+    with open(os.path.join(data_folder, filename_test), 'r') as fp:
+        data_test = fp.read().splitlines()
+    filename_spanish = 'spanish_words.json'
+    with open(os.path.join(data_folder, filename_spanish), 'r') as fp:
+        spanish_cnt_words = json.load(fp)
+    return data_train, data_test, spanish_cnt_words
+
+def create_model(data_folder="../data/"):
+    from ModelManager import ModelManager
+    from fast_autocomplete import AutoComplete
+    # Load data
+    data_train, _, spanish_cnt_words = load_data(data_folder=data_folder)
+    # Words and count
+    words, cnt_words, ngrams_words, _, _, _ = get_words(data_train)
+    # Suffix Tree Model
+    st_autocompleter = AutoComplete(words=ngrams_words)
+    # Metrics calculator
+    return ModelManager(st_autocompleter, cnt_words, spanish_count_words=spanish_cnt_words)  
+
+def get_best_response(incomplete_word, model, **params):
+    # Calculate predictions
+    predictions = model.predict(
+        incomplete_word=incomplete_word,
+        **params
+    )
+    if predictions:
+        best_response, responses, dist_responses = predictions
+        return best_response
+    else:
+        return None
+
 def get_words(data, n_grams=3):
     """
     words: dict with all words and ngrams
