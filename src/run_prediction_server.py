@@ -16,10 +16,15 @@ async def handle(websocket, path):
             best_response = get_best_response(incomplete_word=incomplete_word, model=model, **params)
             if best_response:
                 await websocket.send(best_response)
+            else:
+                if test_mode:
+                    await websocket.send("")
     except websockets.exceptions.ConnectionClosed as e:
         print("A client just disconnected")
 
 if __name__ == "__main__":
+    test_mode = False
+
     # Load model
     model = create_model(data_folder="../data/")
     
